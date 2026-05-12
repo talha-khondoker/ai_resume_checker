@@ -1,0 +1,36 @@
+services:
+  - type: web_service
+    name: AI Resume Analyzer Backend
+    env: docker
+    plan: starter
+    region: oregon
+    repo: https://github.com/<YOUR_GITHUB_ORG>/<YOUR_REPO>
+    branch: main
+    dockerfilePath: backend/Dockerfile
+    envVars:
+      - key: DATABASE_URL
+        sync: true
+      - key: DB_USER
+        sync: true
+      - key: DB_PASSWORD
+        sync: true
+      - key: DB_HOST
+        sync: true
+      - key: DB_NAME
+        sync: true
+      - key: SECRET_KEY
+        sync: true
+      - key: ALGORITHM
+        sync: true
+      - key: ALLOWED_ORIGINS
+        sync: true
+      - key: MAX_UPLOAD_SIZE
+        sync: true
+      - key: UPLOAD_FOLDER
+        sync: true
+      - key: ALLOWED_EXTENSIONS
+        sync: true
+      - key: SPACY_MODEL
+        sync: true
+      - key: NEXT_PUBLIC_API_URL
+        sync: true

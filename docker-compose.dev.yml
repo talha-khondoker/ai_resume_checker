@@ -1,0 +1,82 @@
+version: '3.8'
+
+# Development version with hot-reload and debugging
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: ai-resume-db-dev
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-ai_resume_analyzer}
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ai-resume-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ai-resume-backend-dev
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-ai_resume_analyzer}
+      SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-in-production}
+      DEBUG: "True"
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend/app:/app/app
+      - ./backend/app/uploads:/app/app/uploads
+    networks:
+      - ai-resume-network
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ai-resume-frontend-dev
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - ai-resume-network
+    command: npm run dev
+
+  nginx:
+    image: nginx:alpine
+    container_name: ai-resume-nginx-dev
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - ai-resume-network
+
+volumes:
+  postgres_data_dev:
+
+networks:
+  ai-resume-network:
+    driver: bridge
